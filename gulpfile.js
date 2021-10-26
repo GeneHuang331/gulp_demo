@@ -47,16 +47,48 @@ function gulpSass() {
     .pipe(
       $.if(
         envIsPro,
-        sass({ outputStyle: "compressed" }).on("error", sass.logError)
+        sass({ 
+          includePaths: ['./node_modules/bootstrap/scss'],
+          outputStyle: "compressed",
+         }).on("error", sass.logError)
       )
     )
-    .pipe($.if(!envIsPro, sass().on("error", sass.logError)))
+    .pipe($.if(!envIsPro, sass(
+      {
+        includePaths: ['./node_modules/bootstrap/scss']
+      }
+    ).on("error", sass.logError)))
     .pipe($.postcss(processors))
     .pipe($.sourcemaps.write("."))
     .pipe(gulp.dest("./public/css"))
     .pipe(browserSync.stream());
 }
 exports.gulpSass = gulpSass;
+
+
+
+//vendor.js
+function vendorJS() {
+  return gulp
+    .src([
+      "./node_modules/bootstrap/dist/js/bootstrap.bundle.min.js",
+    ])
+    .pipe($.concat("vendor.js"))
+    .pipe(gulp.dest("./public/javascripts"))
+}
+exports.vendorJS = vendorJS;
+
+//vendor.css
+// function vendorCSS() {
+//   return gulp
+//     .src([
+//       "./node_modules/bootstrap/dist/css/bootstrap.min.css",
+//     ])
+//     .pipe($.concat("vendor.css"))
+//     .pipe(gulp.dest("./public/css"))
+// }
+// exports.vendorCSS = vendorCSS;
+
 
 //js
 function gulpConcatJS() {
@@ -105,7 +137,7 @@ exports.deploy = deploy;
 //default
 exports.default = gulp.series(
   clean,
-  gulp.parallel(gulpPug, gulpSass, gulpConcatJS),
+  gulp.parallel(gulpPug, gulpSass, gulpConcatJS, vendorJS),
   function (done) {
     browserSync.init({
       server: {
@@ -114,7 +146,7 @@ exports.default = gulp.series(
       },
     });
     gulp.watch(["./source/**/*.pug"], gulpPug);
-    gulp.watch(["./source/assets/scss/all.scss"], gulpSass);
+    gulp.watch(["./source/assets/scss/**/*.scss"], gulpSass);
     gulp.watch(["./source/assets/javascripts/**/*.js"], gulpConcatJS);
     done();
   }
